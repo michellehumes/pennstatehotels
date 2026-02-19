@@ -726,24 +726,190 @@
         margin: 8px auto 14px;
       }
 
+      .hero {
+        padding: 16px 14px;
+      }
+
+      .hero h1 {
+        font-size: 1.34rem;
+      }
+
+      .trip-tags {
+        gap: 6px;
+      }
+
+      .tag {
+        font-size: 0.74rem;
+        padding: 4px 8px;
+      }
+
       .controls {
         grid-template-columns: 1fr;
       }
 
+      .table-card,
+      .chart-card,
+      .map-card {
+        padding: 12px;
+      }
+
+      .summary-grid {
+        padding: 12px;
+      }
+
+      .summary-card,
+      .group-wrap {
+        padding: 10px;
+      }
+
+      .friend-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .friend-btn {
+        padding: 9px 6px;
+        font-size: 0.86rem;
+      }
+
+      .vote-controls {
+        padding: 9px;
+      }
+
+      .vote-controls select {
+        font-size: 0.94rem;
+        padding: 10px 9px;
+      }
+
+      .vote-action-row {
+        display: grid;
+        gap: 6px;
+      }
+
+      .vote-submit-btn {
+        width: 100%;
+        padding: 10px 11px;
+        font-size: 0.88rem;
+      }
+
+      .vote-save-status {
+        font-size: 0.82rem;
+      }
+
+      .vote-table-shell {
+        overflow: visible;
+      }
+
+      .vote-table {
+        min-width: 100%;
+      }
+
+      .vote-table thead {
+        display: none;
+      }
+
+      .vote-table tr {
+        display: block;
+        border-bottom: 1px solid #e7effb;
+        padding: 6px 0;
+      }
+
+      .vote-table td {
+        display: grid;
+        grid-template-columns: 102px 1fr;
+        gap: 8px;
+        border-bottom: 0;
+        padding: 5px 8px;
+        font-size: 0.84rem;
+      }
+
+      .vote-table td::before {
+        content: attr(data-label);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.66rem;
+        color: #3f5b80;
+        font-weight: 700;
+      }
+
       #map {
-        height: 290px;
+        height: 255px;
       }
 
       .chart-wrap {
-        height: 280px;
+        height: 250px;
       }
 
       .map-card.map-card-compact #map {
-        height: 280px;
+        height: 255px;
       }
 
       .table-filter-grid {
         grid-template-columns: 1fr;
+      }
+
+      .table-shell {
+        overflow: visible;
+        border: 0;
+      }
+
+      .table-shell table {
+        min-width: 100%;
+      }
+
+      .table-shell thead {
+        display: none;
+      }
+
+      .table-shell tbody {
+        display: grid;
+        gap: 10px;
+      }
+
+      .table-shell tr {
+        display: block;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .table-shell td {
+        display: grid;
+        grid-template-columns: 118px 1fr;
+        gap: 8px;
+        padding: 7px 9px;
+        border-bottom: 1px dashed #e5eefb;
+      }
+
+      .table-shell td:last-child {
+        border-bottom: 0;
+      }
+
+      .table-shell td::before {
+        content: attr(data-label);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.66rem;
+        color: #3f5b80;
+        font-weight: 700;
+      }
+
+      .strong {
+        white-space: normal;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .friend-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .table-shell td {
+        grid-template-columns: 105px 1fr;
+      }
+
+      .vote-table td {
+        grid-template-columns: 94px 1fr;
       }
     }
   </style>
@@ -1564,10 +1730,10 @@
         const saved = vote.submittedAt ? `Saved ${formatSavedAt(vote.submittedAt)}` : "Not submitted";
         return `
           <tr>
-            <td>${escapeHtml(name)}</td>
-            <td>${escapeHtml(attending)}</td>
-            <td>${escapeHtml(choice)}</td>
-            <td>${escapeHtml(saved)}</td>
+            <td data-label="Friend">${escapeHtml(name)}</td>
+            <td data-label="Attending">${escapeHtml(attending)}</td>
+            <td data-label="Preferred Stay">${escapeHtml(choice)}</td>
+            <td data-label="Saved">${escapeHtml(saved)}</td>
           </tr>
         `;
       }).join("");
@@ -1831,17 +1997,17 @@
 
         return `
           <tr>
-            <td>
+            <td data-label="Hotel / Property">
               <div class="hotel">${hotel.name}</div>
               <div class="subnote">${isSoldOut ? "Sold out" : hotel.reviewSource}</div>
             </td>
-            <td><span class="pill ${statusClass(hotel.status)}">${hotel.status}</span></td>
-            <td class="strong">${isSoldOut ? "—" : rateText(hotel)}</td>
-            <td class="strong">${isSoldOut ? "—" : weekendText(hotel)}</td>
-            <td class="strong">${isSoldOut ? "—" : toMiles(hotel.distanceToStadiumMi)}</td>
-            <td class="strong">${isSoldOut ? "—" : toMiles(hotel.distanceToDowntownMi)}</td>
-            <td class="strong">${isSoldOut ? "—" : rating}</td>
-            <td>${isSoldOut ? "Sold out" : (hotel.notes || "-")}</td>
+            <td data-label="Status"><span class="pill ${statusClass(hotel.status)}">${hotel.status}</span></td>
+            <td class="strong" data-label="Rate / Night">${isSoldOut ? "—" : rateText(hotel)}</td>
+            <td class="strong" data-label="Weekend Price / Room">${isSoldOut ? "—" : weekendText(hotel)}</td>
+            <td class="strong" data-label="Distance to Stadium">${isSoldOut ? "—" : toMiles(hotel.distanceToStadiumMi)}</td>
+            <td class="strong" data-label="Distance to Downtown">${isSoldOut ? "—" : toMiles(hotel.distanceToDowntownMi)}</td>
+            <td class="strong" data-label="Online Rating">${isSoldOut ? "—" : rating}</td>
+            <td data-label="Notes">${isSoldOut ? "Sold out" : (hotel.notes || "-")}</td>
           </tr>
         `;
       }).join("");
