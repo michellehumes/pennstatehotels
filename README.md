@@ -1,3 +1,3 @@
 # pennstatehotels
 
-Penn State versus Wisconsin weekend hotel planning dashboard.
+Penn State Hotel Planning dashboard.
