@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penn State Weekend Hotel Vote</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --navy: #041e42;
+      --blue: #0a4d9a;
+      --sky: #dce9fb;
+      --ice: #f5f9ff;
+      --white: #ffffff;
+      --gold: #f4ba2a;
+      --green: #148c53;
+      --hold: #1d67d5;
+      --warn: #a77418;
+      --danger: #b34343;
+      --line: #d9e5f2;
+      --line-strong: #c8d8eb;
+      --text: #19283d;
+      --muted: #5b6f88;
+      --shadow: 0 8px 22px rgba(6, 31, 66, 0.08);
+      --radius: 4px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Arial Narrow", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% 3%, rgba(10, 77, 154, 0.08), transparent 24%),
+        linear-gradient(168deg, #f5f8fd 0%, #f8fbff 60%, #f4f7fc 100%);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1220px, calc(100% - 22px));
+      margin: 14px auto 24px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 20px 22px;
+      color: #fff;
+      background: #0a4d9a;
+      position: relative;
+    }
+
+    .hero::after {
+      display: none;
+    }
+
+    .hero h1,
+    .hero p,
+    .hero .trip-tags {
+      position: relative;
+      z-index: 2;
+      margin: 0;
+    }
+
+    .hero h1 {
+      font-size: 1.62rem;
+      line-height: 1.15;
+      letter-spacing: 0.01em;
+    }
+
+    .hero p {
+      margin-top: 8px;
+      color: #dbe8ff;
+      font-size: 0.94rem;
+    }
+
+    .trip-tags {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      padding: 4px 11px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #eef5ff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .controls {
+      padding: 14px 16px 16px;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(140px, 1fr));
+      gap: 12px;
+      align-items: end;
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+    }
+
+    .field label {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .field select,
+    .field input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      padding: 9px 11px;
+      background: #fff;
+      color: var(--text);
+      font: 600 0.9rem/1.2 "Arial Narrow", Arial, sans-serif;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .field select:focus,
+    .field input[type="text"]:focus {
+      outline: none;
+      border-color: #7ba2d5;
+      box-shadow: 0 0 0 3px rgba(10, 77, 154, 0.13);
+    }
+
+    .field button {
+      width: 100%;
+      border: 1px solid #aac3e1;
+      border-radius: 4px;
+      background: #f3f8ff;
+      color: #2d4a6d;
+      padding: 9px 11px;
+      font: 700 0.86rem/1.2 "Arial Narrow", Arial, sans-serif;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .field button:hover {
+      border-color: #90afda;
+      background: #eaf3ff;
+    }
+
+    .field input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+      cursor: pointer;
+    }
+
+    .range-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr 1fr;
+      padding: 14px;
+    }
+
+    .summary-card {
+      border: 1px solid #d8e4f1;
+      border-radius: 4px;
+      background: #f9fbff;
+      padding: 12px;
+    }
+
+    .summary-card h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .summary-card .sub {
+      margin-top: 4px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .cards {
+      margin-top: 9px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .pick {
+      border: 1px solid #d5e2f1;
+      border-left: 4px solid #88abdc;
+      border-radius: 4px;
+      background: #fff;
+      padding: 9px 10px;
+    }
+
+    .pick .kicker {
+      font-size: 0.71rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #3f5f8a;
+      font-weight: 700;
+    }
+
+    .pick .title {
+      margin-top: 2px;
+      font-size: 0.93rem;
+      font-weight: 700;
+    }
+
+    .pick .meta {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.79rem;
+    }
+
+    .top-list {
+      margin-top: 9px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .rank-item {
+      border: 1px dashed #cddbec;
+      border-radius: 4px;
+      padding: 8px 9px;
+      display: grid;
+      gap: 3px;
+    }
+
+    .rank-item .line1 {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.84rem;
+    }
+
+    .rank-item .line2 {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .group-wrap {
+      border: 1px solid #d8e4f1;
+      border-radius: 4px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .group-wrap h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .group-wrap .sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .friend-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .friend-btn {
+      border: 1px solid #bad0ea;
+      background: #f3f8ff;
+      color: #29466a;
+      padding: 7px 11px;
+      border-radius: 4px;
+      font: 700 0.82rem/1 "Arial Narrow", Arial, sans-serif;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .friend-btn:hover {
+      border-color: #97b5dc;
+      background: #eaf2ff;
+    }
+
+    .friend-btn.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+      box-shadow: 0 2px 8px rgba(10, 77, 154, 0.24);
+    }
+
+    .vote-controls {
+      border: 1px solid #d9e4f1;
+      border-radius: 4px;
+      padding: 10px;
+      background: #f9fbff;
+      display: grid;
+      gap: 8px;
+    }
+
+    .vote-controls .active-label {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #2e486b;
+    }
+
+    .check-row {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 0.84rem;
+      color: var(--text);
+      width: fit-content;
+    }
+
+    .vote-controls select {
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      padding: 9px 10px;
+      font: 600 0.88rem/1.2 "Arial Narrow", Arial, sans-serif;
+      background: #fff;
+      color: var(--text);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .vote-controls select:focus {
+      outline: none;
+      border-color: #7ba2d5;
+      box-shadow: 0 0 0 3px rgba(10, 77, 154, 0.13);
+    }
+
+    .vote-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vote-submit-btn {
+      border: 1px solid var(--blue);
+      border-radius: 4px;
+      background: var(--blue);
+      color: #fff;
+      padding: 8px 11px;
+      font: 700 0.82rem/1.2 "Arial Narrow", Arial, sans-serif;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.12s ease;
+    }
+
+    .vote-submit-btn:hover {
+      background: #084484;
+      transform: translateY(-1px);
+    }
+
+    .vote-save-status {
+      font-size: 0.79rem;
+      color: var(--muted);
+    }
+
+    .vote-table-shell {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: auto;
+    }
+
+    .vote-table {
+      width: 100%;
+      min-width: 380px;
+      border-collapse: collapse;
+    }
+
+    .vote-table th,
+    .vote-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #e7effb;
+      text-align: left;
+      background: #fff;
+      font-size: 0.82rem;
+    }
+
+    .vote-table th {
+      background: #f1f7ff;
+      color: #2d3f59;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.69rem;
+    }
+
+    .map-card {
+      padding: 14px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .viz-row {
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .map-card h2,
+    .chart-card h2,
+    .table-card h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .map-card p,
+    .chart-card p,
+    .table-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    #map {
+      width: 100%;
+      height: 360px;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      overflow: hidden;
+      z-index: 1;
+      background: #eef4ff;
+    }
+
+    .map-key {
+      border: 1px solid var(--line-strong);
+      background: #f8fbff;
+      border-radius: 4px;
+      padding: 9px 11px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 0.79rem;
+      color: #2f4967;
+    }
+
+    .key-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .key-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .key-dot.available {
+      background: var(--green);
+    }
+
+    .key-dot.on-hold {
+      background: var(--hold);
+    }
+
+    .key-dot.limited {
+      background: var(--warn);
+    }
+
+    .key-dot.stadium {
+      background: var(--navy);
+      border-radius: 1px;
+      transform: rotate(45deg);
+    }
+
+    .key-dot.downtown {
+      background: var(--gold);
+      border-radius: 1px;
+      transform: rotate(45deg);
+    }
+
+    .map-notice {
+      border: 1px solid #f0d7a2;
+      border-radius: 4px;
+      background: #fff7e5;
+      color: #7a5a1b;
+      padding: 8px 10px;
+      font-size: 0.84rem;
+    }
+
+    .chart-card {
+      padding: 14px 16px 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .viz-row .chart-wrap {
+      height: 300px;
+    }
+
+    .map-card.map-card-compact #map {
+      height: 300px;
+    }
+
+    .chart-wrap {
+      height: 320px;
+    }
+
+    .table-card {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .table-filters {
+      border: 1px solid #d9e4f1;
+      border-radius: 4px;
+      background: #f9fbff;
+      padding: 11px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .table-filter-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr)) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .table-filter-grid label {
+      display: grid;
+      gap: 4px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+
+    .table-filter-grid select,
+    .table-filter-grid input {
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      padding: 8px 9px;
+      font: 600 0.84rem/1.2 "Arial Narrow", Arial, sans-serif;
+      color: var(--text);
+      background: #fff;
+      width: 100%;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .table-filter-grid select:focus,
+    .table-filter-grid input:focus {
+      outline: none;
+      border-color: #7ba2d5;
+      box-shadow: 0 0 0 3px rgba(10, 77, 154, 0.13);
+    }
+
+    .table-filter-reset {
+      border: 1px solid #aac3e1;
+      border-radius: 4px;
+      background: #f3f8ff;
+      color: #2d4a6d;
+      padding: 9px 11px;
+      font: 700 0.82rem/1.2 "Arial Narrow", Arial, sans-serif;
+      cursor: pointer;
+      height: fit-content;
+      transition: all 0.15s ease;
+    }
+
+    .table-filter-reset:hover {
+      border-color: #90afda;
+      background: #eaf3ff;
+    }
+
+    .table-filter-note {
+      font-size: 0.79rem;
+      color: var(--muted);
+    }
+
+    .table-shell {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: auto;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1140px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f1f7ff;
+      color: #2d3f59;
+      font-size: 0.71rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+      z-index: 4;
+    }
+
+    td {
+      font-size: 0.84rem;
+      padding: 9px 8px;
+      border-bottom: 1px solid #e7effb;
+      vertical-align: top;
+      background: #fff;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fcfdff;
+    }
+
+    tbody tr:hover td {
+      background: #f2f7ff;
+    }
+
+    .hotel {
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .subnote {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .strong {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 4px;
+      padding: 4px 10px;
+      border: 1px solid transparent;
+      font-size: 0.74rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill.available {
+      color: var(--green);
+      background: #e9f9f0;
+      border-color: #bfe8cf;
+    }
+
+    .pill.on-hold {
+      color: var(--hold);
+      background: #eaf1ff;
+      border-color: #c9d8fc;
+    }
+
+    .pill.limited {
+      color: var(--warn);
+      background: #fff4df;
+      border-color: #f0d7a2;
+    }
+
+    .pill.sold {
+      color: #a33333;
+      background: #ffecec;
+      border-color: #f1bdbd;
+    }
+
+    .empty {
+      border: 1px dashed #bfd1e8;
+      border-radius: 4px;
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.89rem;
+      font-weight: 600;
+    }
+
+    @media (max-width: 1120px) {
+      .controls {
+        grid-template-columns: repeat(3, minmax(170px, 1fr));
+      }
+
+      .viz-row {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .table-filter-grid {
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        width: calc(100% - 12px);
+        margin: 8px auto 14px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      #map {
+        height: 290px;
+      }
+
+      .chart-wrap {
+        height: 280px;
+      }
+
+      .map-card.map-card-compact #map {
+        height: 280px;
+      }
+
+      .table-filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel hero">
+      <h1>Penn State versus Wisconsin weekend hotel planning.</h1>
+      <div class="trip-tags">
+        <span class="tag">Trip: September 26-28, 2026</span>
+        <span class="tag">Game: Penn State vs Wisconsin</span>
+        <span class="tag">Group: 7 friends</span>
+        <span class="tag" id="updatedAt"></span>
+      </div>
+    </section>
+
+    <section class="panel table-card">
+      <h2>Full Hotel Comparison (Filterable)</h2>
+      <p>Includes all hotels, including sold-out properties. Use top filters and table filters below.</p>
+
+      <div class="table-filters">
+        <div class="table-filter-grid">
+          <label for="tableStatusInput">Table Status
+            <select id="tableStatusInput">
+              <option value="">All statuses</option>
+              <option value="Available">Available</option>
+              <option value="On hold">On hold</option>
+              <option value="Limited availability">Limited availability</option>
+              <option value="Sold out">Sold out</option>
+            </select>
+          </label>
+          <label for="tablePriceInput">Max Weekend Price
+            <input id="tablePriceInput" type="number" min="0" step="50" placeholder="Any">
+          </label>
+          <label for="tableStadiumInput">Max Distance to Stadium
+            <input id="tableStadiumInput" type="number" min="0" step="0.1" placeholder="Any">
+          </label>
+          <label for="tableDowntownInput">Max Distance to Downtown
+            <input id="tableDowntownInput" type="number" min="0" step="0.1" placeholder="Any">
+          </label>
+          <label for="tableRatingInput">Min Online Rating
+            <input id="tableRatingInput" type="number" min="0" max="5" step="0.1" placeholder="Any">
+          </label>
+          <button class="table-filter-reset" id="resetTableFiltersBtn" type="button">Reset Table Filters</button>
+        </div>
+        <div class="table-filter-note">Table filters only affect this table. Map and comparison chart show all open hotels.</div>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Hotel / Property</th>
+              <th>Status</th>
+              <th>Rate / Night</th>
+              <th>Weekend Price / Room</th>
+              <th>Distance to Stadium</th>
+              <th>Distance to Downtown</th>
+              <th>Online Rating</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState" hidden>No hotels match your current filters.</div>
+    </section>
+
+    <section class="viz-row">
+      <section class="panel chart-card">
+        <h2>Price + Distance Comparison</h2>
+        <p>Hotels are ordered from closest to farthest from the stadium.</p>
+        <div class="chart-wrap"><canvas id="stackChart"></canvas></div>
+      </section>
+
+      <section class="panel map-card map-card-compact">
+        <h2>Map View</h2>
+        <p>Hotel locations relative to Beaver Stadium and downtown.</p>
+        <div id="map"></div>
+        <div class="map-key">
+          <span class="key-item"><span class="key-dot available"></span>Available</span>
+          <span class="key-item"><span class="key-dot on-hold"></span>On Hold</span>
+          <span class="key-item"><span class="key-dot limited"></span>Limited Availability</span>
+          <span class="key-item"><span class="key-dot stadium"></span>Beaver Stadium</span>
+          <span class="key-item"><span class="key-dot downtown"></span>Downtown State College</span>
+        </div>
+        <div class="map-notice" id="mapNotice" hidden>Map did not load from OpenStreetMap. Check internet and refresh.</div>
+      </section>
+    </section>
+
+    <section class="panel summary-grid">
+      <div class="summary-card">
+        <h2>Evaluation</h2>
+        <div class="sub">Scored on 30% weekend price, 30% distance to stadium, 30% distance to downtown, and 10% online review rating.</div>
+
+        <div class="cards" id="summaryCards"></div>
+        <div class="top-list" id="topList"></div>
+      </div>
+
+      <div class="group-wrap">
+        <h2>Group Check-In + Hotel Vote</h2>
+        <p class="sub">Tap a name, set attending to TBD/Yes/No, and choose the preferred stay option.</p>
+        <div class="friend-buttons" id="friendButtons"></div>
+        <div class="vote-controls">
+          <div class="active-label" id="activeFriendLabel"></div>
+          <label for="attendingInput">Attending status</label>
+          <select id="attendingInput">
+            <option value="TBD">TBD</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+          <label for="choiceInput">Preferred hotel or stay</label>
+          <select id="choiceInput"></select>
+          <div class="vote-action-row">
+            <button class="vote-submit-btn" id="submitVoteBtn" type="button">Submit Response</button>
+            <span class="vote-save-status" id="voteSaveStatus"></span>
+          </div>
+        </div>
+        <div class="vote-table-shell">
+          <table class="vote-table">
+            <thead>
+              <tr>
+                <th>Friend</th>
+                <th>Attending</th>
+                <th>Preferred Stay</th>
+                <th>Saved</th>
+              </tr>
+            </thead>
+            <tbody id="voteTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const landmarks = {
+      stadium: {
+        name: "Beaver Stadium",
+        lat: 40.8110504,
+        lng: -77.8555002
+      },
+      downtown: {
+        name: "Downtown State College",
+        lat: 40.7937665,
+        lng: -77.8613082
+      }
+    };
+
+    const hotels = [
+      {
+        name: "Comfort Suites State College",
+        priority: "Action",
+        status: "Available",
+        lat: 40.8032985,
+        lng: -77.8796678,
+        distanceToStadiumMi: 2.27,
+        distanceToDowntownMi: 1.6,
+        rateMin: 659,
+        rateMax: 659,
+        reviewScore: 4.5,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Contract in progress. Michelle asked for contract details, and Michael requested group details on 2/19."
+      },
+      {
+        name: "Hampton Inn & Suites (Williamsburg Sq)",
+        priority: "Update",
+        status: "Available",
+        lat: 40.8174638,
+        lng: -77.8982011,
+        distanceToStadiumMi: 4.39,
+        distanceToDowntownMi: 3.18,
+        rateMin: 749,
+        rateMax: 749,
+        reviewScore: 4.3,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Confirmed details: $749/night, 30-day cancellation, full deposit after the 30-day mark."
+      },
+      {
+        name: "Hilton Garden Inn State College",
+        priority: "Urgent",
+        status: "On hold",
+        lat: 40.8095792,
+        lng: -77.8352035,
+        distanceToStadiumMi: 1.72,
+        distanceToDowntownMi: 2.02,
+        rateMin: 799,
+        rateMax: 799,
+        reviewScore: 4.4,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Hold expires March 2, 2026. Group needs to book now to keep these rooms."
+      },
+      {
+        name: "Penn Stater Hotel & Conf. Center",
+        priority: "Important",
+        status: "Limited availability",
+        lat: 40.8316177,
+        lng: -77.8444391,
+        distanceToStadiumMi: 1.82,
+        distanceToDowntownMi: 4.21,
+        rateMin: 799,
+        rateMax: 799,
+        reviewScore: 4.2,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Limited rooms. NON-REFUNDABLE — no cancellations."
+      },
+      {
+        name: "Best Western Plus University Park Inn & Suites",
+        priority: "Update",
+        status: "Available",
+        lat: 40.83899,
+        lng: -77.80187,
+        distanceToStadiumMi: 4.54,
+        distanceToDowntownMi: 4.83,
+        rateMin: 799,
+        rateMax: 799,
+        reviewScore: 4.4,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Using Karl Jones quote: $799/night (Feb 17)."
+      },
+      {
+        name: "Fairfield by Marriott Inn & Suites State College",
+        priority: "Watch",
+        status: "Available",
+        lat: 40.8105714,
+        lng: -77.9114352,
+        distanceToStadiumMi: 6.04,
+        distanceToDowntownMi: 3.49,
+        rateMin: 799,
+        rateMax: 799,
+        reviewScore: 4.4,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Found online, pending confirmation"
+      },
+      {
+        name: "Graduate by Hilton State College",
+        priority: "Update",
+        status: "Available",
+        lat: 40.7915183,
+        lng: -77.8640546,
+        distanceToStadiumMi: 2.26,
+        distanceToDowntownMi: 0.3,
+        rateMin: 1363,
+        rateMax: 1390,
+        reviewScore: 4.2,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Found online, pending confirmation (no email reply received)."
+      },
+      {
+        name: "Toftrees Golf Resort & Carnegie House",
+        priority: "Action",
+        status: "Available",
+        lat: 40.824077,
+        lng: -77.9006745,
+        distanceToStadiumMi: 3.23,
+        distanceToDowntownMi: 3.88,
+        rateMin: 1999,
+        rateMax: 1999,
+        reviewScore: 3.7,
+        reviewSource: "Tripadvisor snapshot",
+        notes: "Follow-up pending."
+      },
+      {
+        name: "Nittany Lion Inn",
+        priority: "Reference",
+        status: "Sold out",
+        lat: 40.7969457,
+        lng: -77.8705363,
+        distanceToStadiumMi: 1.79,
+        distanceToDowntownMi: 0.86,
+        rateMin: null,
+        rateMax: null,
+        reviewScore: null,
+        reviewSource: "N/A",
+        notes: "Sold out"
+      },
+      {
+        name: "Hyatt Place State College",
+        priority: "Reference",
+        status: "Sold out",
+        lat: 40.7923883,
+        lng: -77.862121,
+        distanceToStadiumMi: 2.27,
+        distanceToDowntownMi: 0.19,
+        rateMin: null,
+        rateMax: null,
+        reviewScore: null,
+        reviewSource: "N/A",
+        notes: "Sold out"
+      }
+    ];
+
+    const openHotels = hotels.filter((h) => h.status !== "Sold out");
+    const soldOutHotels = hotels.filter((h) => h.status === "Sold out");
+
+    const state = {
+      sort: "scoreDesc",
+      tableStatus: "",
+      tableMaxWeekend: null,
+      tableMaxStadium: null,
+      tableMaxDowntown: null,
+      tableMinRating: null
+    };
+
+    const VOTE_STORAGE_KEY = "psu_hotel_friend_votes_v1";
+    const SHARED_VOTE_URL = "https://jsonblob.com/api/jsonBlob/019c784a-55ca-74ce-91a8-edd298a897c2";
+    const SHARED_VOTE_REFRESH_MS = 15000;
+    const friendNames = ["Sapna", "Jess", "Mary", "Anna", "Tiff", "Michelle", "Amy"];
+    const friendVotes = Object.fromEntries(friendNames.map((name) => [name, {
+      attending: "TBD",
+      choice: "",
+      submittedAt: "",
+      dirty: false
+    }]));
+    let activeFriend = friendNames[0];
+
+    const els = {
+      updatedAt: document.getElementById("updatedAt"),
+      summaryCards: document.getElementById("summaryCards"),
+      topList: document.getElementById("topList"),
+      friendButtons: document.getElementById("friendButtons"),
+      activeFriendLabel: document.getElementById("activeFriendLabel"),
+      attendingInput: document.getElementById("attendingInput"),
+      choiceInput: document.getElementById("choiceInput"),
+      submitVoteBtn: document.getElementById("submitVoteBtn"),
+      voteSaveStatus: document.getElementById("voteSaveStatus"),
+      voteTableBody: document.getElementById("voteTableBody"),
+      tableStatusInput: document.getElementById("tableStatusInput"),
+      tablePriceInput: document.getElementById("tablePriceInput"),
+      tableStadiumInput: document.getElementById("tableStadiumInput"),
+      tableDowntownInput: document.getElementById("tableDowntownInput"),
+      tableRatingInput: document.getElementById("tableRatingInput"),
+      resetTableFiltersBtn: document.getElementById("resetTableFiltersBtn"),
+      tableBody: document.getElementById("tableBody"),
+      emptyState: document.getElementById("emptyState"),
+      mapNotice: document.getElementById("mapNotice")
+    };
+
+    let stackChart;
+    let map;
+    let hotelLayer;
+    let landmarkLayer;
+
+    function toCurrency(value) {
+      if (value === null || Number.isNaN(value)) {
+        return "N/A";
+      }
+      return `$${Math.round(value).toLocaleString()}`;
+    }
+
+    function toMiles(value) {
+      if (value === null || Number.isNaN(value)) {
+        return "N/A";
+      }
+      return `${value.toFixed(2)} mi`;
+    }
+
+    function parseNullableNumber(text) {
+      if (!text) {
+        return null;
+      }
+      const n = Number(text);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function statusClass(status) {
+      if (status === "Available") {
+        return "available";
+      }
+      if (status === "On hold") {
+        return "on-hold";
+      }
+      if (status === "Limited availability") {
+        return "limited";
+      }
+      return "sold";
+    }
+
+    function statusColor(status) {
+      if (status === "Available") {
+        return "#148c53";
+      }
+      if (status === "On hold") {
+        return "#1d67d5";
+      }
+      if (status === "Limited availability") {
+        return "#a77418";
+      }
+      return "#b34343";
+    }
+
+    function rateText(hotel) {
+      if (hotel.rateMin === null || hotel.rateMax === null) {
+        return "N/A";
+      }
+      if (hotel.rateMin === hotel.rateMax) {
+        return toCurrency(hotel.rateMin);
+      }
+      return `${toCurrency(hotel.rateMin)} - ${toCurrency(hotel.rateMax)}`;
+    }
+
+    function weekendRange(hotel) {
+      if (hotel.rateMin === null || hotel.rateMax === null) {
+        return { min: null, max: null };
+      }
+      return {
+        min: hotel.rateMin * 2,
+        max: hotel.rateMax * 2
+      };
+    }
+
+    function weekendText(hotel) {
+      const range = weekendRange(hotel);
+      if (range.min === null || range.max === null) {
+        return "N/A";
+      }
+      if (range.min === range.max) {
+        return toCurrency(range.min);
+      }
+      return `${toCurrency(range.min)} - ${toCurrency(range.max)}`;
+    }
+
+    function normalizeLowerBetter(value, min, max) {
+      if (value === null || Number.isNaN(value)) {
+        return 0;
+      }
+      if (max === min) {
+        return 1;
+      }
+      return (max - value) / (max - min);
+    }
+
+    function normalizeHigherBetter(value, min, max) {
+      if (value === null || Number.isNaN(value)) {
+        return 0;
+      }
+      if (max === min) {
+        return 1;
+      }
+      return (value - min) / (max - min);
+    }
+
+    function scoreRows(rows) {
+      if (!rows.length) {
+        return [];
+      }
+
+      const prices = rows.map((h) => weekendRange(h).min).filter((v) => v !== null);
+      const stadiumDistances = rows.map((h) => h.distanceToStadiumMi).filter((v) => v !== null);
+      const downtownDistances = rows.map((h) => h.distanceToDowntownMi).filter((v) => v !== null);
+      const ratings = rows.map((h) => h.reviewScore).filter((v) => v !== null);
+
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const minStadium = Math.min(...stadiumDistances);
+      const maxStadium = Math.max(...stadiumDistances);
+      const minDowntown = Math.min(...downtownDistances);
+      const maxDowntown = Math.max(...downtownDistances);
+      const minRating = Math.min(...ratings);
+      const maxRating = Math.max(...ratings);
+
+      return rows.map((hotel) => {
+        const pricePart = normalizeLowerBetter(weekendRange(hotel).min, minPrice, maxPrice);
+        const stadiumPart = normalizeLowerBetter(hotel.distanceToStadiumMi, minStadium, maxStadium);
+        const downtownPart = normalizeLowerBetter(hotel.distanceToDowntownMi, minDowntown, maxDowntown);
+        const reviewPart = normalizeHigherBetter(hotel.reviewScore, minRating, maxRating);
+
+        const score =
+          (pricePart * 0.3) +
+          (stadiumPart * 0.3) +
+          (downtownPart * 0.3) +
+          (reviewPart * 0.1);
+
+        return {
+          hotel,
+          score
+        };
+      }).sort((a, b) => b.score - a.score);
+    }
+
+    function sortRows(rows) {
+      const scored = scoreRows(rows);
+      const scoreMap = new Map(scored.map((item) => [item.hotel.name, item.score]));
+
+      const result = [...rows];
+      result.sort((a, b) => {
+        const aSoldOut = a.status === "Sold out";
+        const bSoldOut = b.status === "Sold out";
+        if (aSoldOut !== bSoldOut) {
+          return aSoldOut ? 1 : -1;
+        }
+
+        if (state.sort === "scoreDesc") {
+          return (scoreMap.get(b.name) ?? -1) - (scoreMap.get(a.name) ?? -1);
+        }
+        if (state.sort === "costAsc") {
+          return (weekendRange(a).min ?? Number.MAX_SAFE_INTEGER) - (weekendRange(b).min ?? Number.MAX_SAFE_INTEGER);
+        }
+        if (state.sort === "stadiumAsc") {
+          return a.distanceToStadiumMi - b.distanceToStadiumMi;
+        }
+        if (state.sort === "downtownAsc") {
+          return a.distanceToDowntownMi - b.distanceToDowntownMi;
+        }
+        if (state.sort === "ratingDesc") {
+          return (b.reviewScore ?? -1) - (a.reviewScore ?? -1);
+        }
+        return 0;
+      });
+
+      return result;
+    }
+
+    function filterRows() {
+      return [...openHotels];
+    }
+
+    function wrapLabel(text, maxChars = 14) {
+      const words = text.split(" ");
+      const lines = [];
+      let current = "";
+
+      words.forEach((word) => {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= maxChars) {
+          current = candidate;
+        } else {
+          if (current) {
+            lines.push(current);
+          }
+          current = word;
+        }
+      });
+
+      if (current) {
+        lines.push(current);
+      }
+
+      return lines.length ? lines : [text];
+    }
+
+    function renderEvaluation(rows) {
+      const scored = scoreRows(rows);
+
+      if (!scored.length) {
+        els.summaryCards.innerHTML = '<div class="pick"><div class="kicker">No Matches</div><div class="title">No hotels in current filters</div><div class="meta">Adjust sliders or search.</div></div>';
+        els.topList.innerHTML = "";
+        return;
+      }
+
+      const bestOverall = scored[0].hotel;
+
+      const bestValue = [...rows].sort((a, b) => (weekendRange(a).min ?? Number.MAX_SAFE_INTEGER) - (weekendRange(b).min ?? Number.MAX_SAFE_INTEGER))[0];
+      const closestStadium = [...rows].sort((a, b) => a.distanceToStadiumMi - b.distanceToStadiumMi)[0];
+
+      els.summaryCards.innerHTML = `
+        <div class="pick">
+          <div class="kicker">Best Overall</div>
+          <div class="title">${bestOverall.name}</div>
+          <div class="meta">${weekendText(bestOverall)} | Stadium ${toMiles(bestOverall.distanceToStadiumMi)} | Downtown ${toMiles(bestOverall.distanceToDowntownMi)} | ${bestOverall.reviewScore?.toFixed(1) ?? "N/A"}/5</div>
+        </div>
+        <div class="pick">
+          <div class="kicker">Best Value</div>
+          <div class="title">${bestValue.name}</div>
+          <div class="meta">${weekendText(bestValue)} weekend per room</div>
+        </div>
+        <div class="pick">
+          <div class="kicker">Closest to Stadium</div>
+          <div class="title">${closestStadium.name}</div>
+          <div class="meta">${toMiles(closestStadium.distanceToStadiumMi)} to Beaver Stadium</div>
+        </div>
+      `;
+
+      els.topList.innerHTML = scored.slice(0, 3).map((item, index) => {
+        const h = item.hotel;
+        return `
+          <div class="rank-item">
+            <div class="line1"><span>#${index + 1} ${h.name}</span><span>${(item.score * 100).toFixed(1)}</span></div>
+            <div class="line2">${weekendText(h)} | Stadium ${toMiles(h.distanceToStadiumMi)} | Downtown ${toMiles(h.distanceToDowntownMi)} | Rating ${h.reviewScore?.toFixed(1) ?? "N/A"}/5</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function preferredStayOptions() {
+      const hotelNames = openHotels.map((hotel) => hotel.name).sort((a, b) => a.localeCompare(b));
+      return ["", ...hotelNames, "I'd rather do a house"];
+    }
+
+    function allowedStayChoices() {
+      return new Set(preferredStayOptions());
+    }
+
+    function sanitizeStayChoice(choice) {
+      if (typeof choice !== "string") {
+        return "";
+      }
+      return allowedStayChoices().has(choice) ? choice : "";
+    }
+
+    function escapeHtml(text) {
+      if (text === null || text === undefined) {
+        return "";
+      }
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatSavedAt(isoText) {
+      if (!isoText) {
+        return "";
+      }
+      const date = new Date(isoText);
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
+      return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function normalizeVoteRecord(vote) {
+      if (!vote || typeof vote !== "object") {
+        return { attending: "TBD", choice: "", submittedAt: "" };
+      }
+
+      let attending = "TBD";
+      if (typeof vote.attending === "string") {
+        attending = ["TBD", "Yes", "No"].includes(vote.attending) ? vote.attending : "TBD";
+      } else if (vote.attending === true) {
+        attending = "Yes";
+      }
+
+      return {
+        attending,
+        choice: sanitizeStayChoice(vote.choice),
+        submittedAt: typeof vote.submittedAt === "string" ? vote.submittedAt : ""
+      };
+    }
+
+    function extractVoteMap(payload) {
+      if (!payload || typeof payload !== "object") {
+        return {};
+      }
+      if (payload.votes && typeof payload.votes === "object") {
+        return payload.votes;
+      }
+      return payload;
+    }
+
+    function applyVoteMap(voteMap, options = {}) {
+      const preserveDirtyActive = Boolean(options.preserveDirtyActive);
+
+      friendNames.forEach((name) => {
+        if (preserveDirtyActive && name === activeFriend && friendVotes[name].dirty) {
+          return;
+        }
+        const normalized = normalizeVoteRecord(voteMap[name]);
+        friendVotes[name].attending = normalized.attending;
+        friendVotes[name].choice = normalized.choice;
+        friendVotes[name].submittedAt = normalized.submittedAt;
+        friendVotes[name].dirty = false;
+      });
+    }
+
+    function buildVotePayload() {
+      const votes = {};
+      friendNames.forEach((name) => {
+        votes[name] = normalizeVoteRecord(friendVotes[name]);
+      });
+
+      return {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        votes
+      };
+    }
+
+    function saveVotesToStorage() {
+      if (!window.localStorage) {
+        return;
+      }
+      localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(buildVotePayload()));
+    }
+
+    function loadVotesFromStorage() {
+      if (!window.localStorage) {
+        return;
+      }
+      const raw = localStorage.getItem(VOTE_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        applyVoteMap(extractVoteMap(parsed));
+      } catch (_err) {
+        // Ignore malformed saved data and continue with defaults.
+      }
+    }
+
+    async function loadVotesFromShared(options = {}) {
+      try {
+        const response = await fetch(`${SHARED_VOTE_URL}?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) {
+          return false;
+        }
+        const payload = await response.json();
+        applyVoteMap(extractVoteMap(payload), { preserveDirtyActive: Boolean(options.preserveDirtyActive) });
+        saveVotesToStorage();
+        renderFriendVotes();
+        return true;
+      } catch (_err) {
+        return false;
+      }
+    }
+
+    async function submitActiveFriendVote() {
+      const currentVote = friendVotes[activeFriend];
+      currentVote.submittedAt = new Date().toISOString();
+      currentVote.dirty = false;
+      saveVotesToStorage();
+      renderFriendVotes();
+      els.voteSaveStatus.textContent = "Saving for everyone...";
+      els.submitVoteBtn.disabled = true;
+
+      try {
+        let merged = buildVotePayload();
+
+        try {
+          const pull = await fetch(`${SHARED_VOTE_URL}?t=${Date.now()}`, { cache: "no-store" });
+          if (pull.ok) {
+            const remotePayload = await pull.json();
+            const remoteVotes = extractVoteMap(remotePayload);
+            merged = {
+              version: 1,
+              updatedAt: new Date().toISOString(),
+              votes: {}
+            };
+            friendNames.forEach((name) => {
+              merged.votes[name] = normalizeVoteRecord(remoteVotes[name]);
+            });
+          }
+        } catch (_err) {
+          // Keep local payload when a remote read fails.
+        }
+
+        merged.votes[activeFriend] = normalizeVoteRecord(currentVote);
+        merged.updatedAt = new Date().toISOString();
+
+        const push = await fetch(SHARED_VOTE_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(merged)
+        });
+
+        if (!push.ok) {
+          throw new Error(`Vote sync failed (${push.status})`);
+        }
+
+        let savedPayload = merged;
+        try {
+          savedPayload = await push.json();
+        } catch (_err) {
+          // Some responses may not include JSON; keep merged payload.
+        }
+
+        applyVoteMap(extractVoteMap(savedPayload));
+        saveVotesToStorage();
+        renderFriendVotes();
+      } catch (err) {
+        console.error(err);
+        els.voteSaveStatus.textContent = "Saved only on this device. Tap Update Response to retry.";
+      } finally {
+        els.submitVoteBtn.disabled = false;
+      }
+    }
+
+    function renderFriendVoteControls() {
+      const currentVote = friendVotes[activeFriend];
+      const options = preferredStayOptions();
+
+      els.friendButtons.innerHTML = friendNames.map((name) => `
+        <button class="friend-btn ${name === activeFriend ? "active" : ""}" data-name="${name}" type="button">${name}</button>
+      `).join("");
+
+      els.activeFriendLabel.textContent = `Editing: ${activeFriend}`;
+      els.attendingInput.value = currentVote.attending || "TBD";
+
+      els.choiceInput.innerHTML = options.map((option) => {
+        const label = option || "Select hotel or stay option";
+        return `<option value="${option}">${label}</option>`;
+      }).join("");
+
+      els.choiceInput.value = currentVote.choice || "";
+
+      const hasSavedResponse = Boolean(currentVote.submittedAt);
+      els.submitVoteBtn.textContent = hasSavedResponse ? "Update Response" : "Submit Response";
+
+      if (currentVote.dirty) {
+        els.voteSaveStatus.textContent = "Changes not saved yet.";
+      } else if (hasSavedResponse) {
+        els.voteSaveStatus.textContent = `Saved ${formatSavedAt(currentVote.submittedAt)}. You can edit and update anytime.`;
+      } else {
+        els.voteSaveStatus.textContent = "Not submitted yet.";
+      }
+    }
+
+    function renderFriendVoteTable() {
+      els.voteTableBody.innerHTML = friendNames.map((name) => {
+        const vote = friendVotes[name];
+        const attending = vote.attending || "TBD";
+        const choice = vote.choice || "Not picked yet";
+        const saved = vote.submittedAt ? `Saved ${formatSavedAt(vote.submittedAt)}` : "Not submitted";
+        return `
+          <tr>
+            <td>${escapeHtml(name)}</td>
+            <td>${escapeHtml(attending)}</td>
+            <td>${escapeHtml(choice)}</td>
+            <td>${escapeHtml(saved)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderFriendVotes() {
+      renderFriendVoteControls();
+      renderFriendVoteTable();
+    }
+
+    function initMap() {
+      if (typeof L === "undefined") {
+        els.mapNotice.hidden = false;
+        return;
+      }
+
+      els.mapNotice.hidden = true;
+      map = L.map("map", { zoomControl: true, scrollWheelZoom: true });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      hotelLayer = L.layerGroup().addTo(map);
+      landmarkLayer = L.layerGroup().addTo(map);
+
+      const stadiumIcon = L.divIcon({
+        className: "",
+        html: '<div style="width:12px;height:12px;background:#041e42;transform:rotate(45deg);border:2px solid #fff;box-shadow:0 0 0 1px #041e42"></div>',
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+      });
+
+      const downtownIcon = L.divIcon({
+        className: "",
+        html: '<div style="width:12px;height:12px;background:#f4ba2a;transform:rotate(45deg);border:2px solid #fff;box-shadow:0 0 0 1px #8b6513"></div>',
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+      });
+
+      const stadiumMarker = L.marker([landmarks.stadium.lat, landmarks.stadium.lng], { icon: stadiumIcon })
+        .bindPopup(`<strong>${landmarks.stadium.name}</strong>`);
+
+      const downtownMarker = L.marker([landmarks.downtown.lat, landmarks.downtown.lng], { icon: downtownIcon })
+        .bindPopup(`<strong>${landmarks.downtown.name}</strong>`);
+
+      landmarkLayer.addLayer(stadiumMarker);
+      landmarkLayer.addLayer(downtownMarker);
+
+      map.setView([40.804, -77.865], 12);
+      setTimeout(() => map.invalidateSize(), 0);
+    }
+
+    function renderMap(rows) {
+      if (!map || !hotelLayer) {
+        return;
+      }
+
+      hotelLayer.clearLayers();
+      const bounds = [
+        [landmarks.stadium.lat, landmarks.stadium.lng],
+        [landmarks.downtown.lat, landmarks.downtown.lng]
+      ];
+
+      rows.forEach((hotel) => {
+        if (typeof hotel.lat !== "number" || typeof hotel.lng !== "number") {
+          return;
+        }
+
+        const marker = L.circleMarker([hotel.lat, hotel.lng], {
+          radius: 7,
+          color: "#ffffff",
+          weight: 1.6,
+          fillColor: statusColor(hotel.status),
+          fillOpacity: 0.95
+        }).bindPopup(
+          `<strong>${hotel.name}</strong><br>` +
+          `${hotel.status}<br>` +
+          `Rate: ${rateText(hotel)} / night<br>` +
+          `Weekend: ${weekendText(hotel)}<br>` +
+          `Distance to stadium: ${toMiles(hotel.distanceToStadiumMi)}<br>` +
+          `Distance to downtown: ${toMiles(hotel.distanceToDowntownMi)}<br>` +
+          `Reviews: ${hotel.reviewScore?.toFixed(1) ?? "N/A"}/5`
+        );
+
+        hotelLayer.addLayer(marker);
+        bounds.push([hotel.lat, hotel.lng]);
+      });
+
+      if (bounds.length >= 2) {
+        map.fitBounds(bounds, { padding: [26, 26], maxZoom: 13 });
+        setTimeout(() => map.invalidateSize(), 0);
+      }
+    }
+
+    function renderChart(rows) {
+      if (typeof Chart === "undefined") {
+        return;
+      }
+
+      const chartRows = [...rows]
+        .filter((h) => weekendRange(h).min !== null)
+        .sort((a, b) => a.distanceToStadiumMi - b.distanceToStadiumMi);
+
+      const labels = chartRows.map((h) => wrapLabel(h.name));
+      const weekendPrices = chartRows.map((h) => weekendRange(h).min);
+      const stadiumDistances = chartRows.map((h) => h.distanceToStadiumMi);
+      const downtownDistances = chartRows.map((h) => h.distanceToDowntownMi);
+
+      const chartData = {
+        labels,
+        datasets: [
+          {
+            type: "bar",
+            label: "Weekend price / room",
+            data: weekendPrices,
+            yAxisID: "yPrice",
+            backgroundColor: "rgba(10, 77, 154, 0.82)",
+            borderRadius: 4
+          },
+          {
+            type: "line",
+            label: "Distance to stadium",
+            data: stadiumDistances,
+            yAxisID: "yDistance",
+            borderColor: "rgba(20, 140, 83, 0.95)",
+            backgroundColor: "rgba(20, 140, 83, 0.95)",
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 4,
+            tension: 0.25
+          },
+          {
+            type: "line",
+            label: "Distance to downtown",
+            data: downtownDistances,
+            yAxisID: "yDistance",
+            borderColor: "rgba(244, 186, 42, 0.95)",
+            backgroundColor: "rgba(244, 186, 42, 0.95)",
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 4,
+            tension: 0.25
+          }
+        ]
+      };
+
+      const tooltipLabel = (ctx) => {
+        const hotel = chartRows[ctx.dataIndex];
+        if (!hotel) {
+          return "";
+        }
+        if (ctx.dataset.yAxisID === "yPrice") {
+          return `Weekend price: ${weekendText(hotel)}`;
+        }
+        if (ctx.dataset.label.includes("stadium")) {
+          return `Distance to stadium: ${toMiles(hotel.distanceToStadiumMi)}`;
+        }
+        return `Distance to downtown: ${toMiles(hotel.distanceToDowntownMi)}`;
+      };
+
+      if (!stackChart) {
+        stackChart = new Chart(document.getElementById("stackChart"), {
+          data: chartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: "top" },
+              tooltip: { callbacks: { label: tooltipLabel } }
+            },
+            scales: {
+              x: {
+                ticks: {
+                  autoSkip: false,
+                  maxRotation: 0,
+                  minRotation: 0,
+                  font: { size: 10 }
+                },
+                grid: { display: false }
+              },
+              yPrice: {
+                position: "left",
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Weekend Price ($)"
+                },
+                ticks: {
+                  callback: (v) => toCurrency(v)
+                },
+                grid: {
+                  color: "rgba(25, 40, 61, 0.1)"
+                }
+              },
+              yDistance: {
+                position: "right",
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Distance (mi)"
+                },
+                grid: {
+                  drawOnChartArea: false
+                }
+              }
+            }
+          }
+        });
+      } else {
+        stackChart.data = chartData;
+        stackChart.options.plugins.tooltip.callbacks.label = tooltipLabel;
+        stackChart.update();
+      }
+    }
+
+    function applyTableFilters(rows) {
+      return rows.filter((hotel) => {
+        if (state.tableStatus && hotel.status !== state.tableStatus) {
+          return false;
+        }
+
+        const weekendMin = weekendRange(hotel).min;
+        if (state.tableMaxWeekend !== null && weekendMin !== null && weekendMin > state.tableMaxWeekend) {
+          return false;
+        }
+
+        if (state.tableMaxStadium !== null && hotel.distanceToStadiumMi > state.tableMaxStadium) {
+          return false;
+        }
+
+        if (state.tableMaxDowntown !== null && hotel.distanceToDowntownMi > state.tableMaxDowntown) {
+          return false;
+        }
+
+        if (state.tableMinRating !== null) {
+          if (hotel.reviewScore === null || hotel.reviewScore < state.tableMinRating) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    function renderTable(rows) {
+      const tableRows = applyTableFilters([...rows, ...soldOutHotels]);
+
+      if (!tableRows.length) {
+        els.tableBody.innerHTML = "";
+        els.emptyState.hidden = false;
+        return;
+      }
+
+      els.emptyState.hidden = true;
+      const sorted = sortRows(tableRows);
+
+      els.tableBody.innerHTML = sorted.map((hotel) => {
+        const isSoldOut = hotel.status === "Sold out";
+        const rating = hotel.reviewScore === null ? "N/A" : `${hotel.reviewScore.toFixed(1)} / 5`;
+
+        return `
+          <tr>
+            <td>
+              <div class="hotel">${hotel.name}</div>
+              <div class="subnote">${isSoldOut ? "Sold out" : hotel.reviewSource}</div>
+            </td>
+            <td><span class="pill ${statusClass(hotel.status)}">${hotel.status}</span></td>
+            <td class="strong">${isSoldOut ? "—" : rateText(hotel)}</td>
+            <td class="strong">${isSoldOut ? "—" : weekendText(hotel)}</td>
+            <td class="strong">${isSoldOut ? "—" : toMiles(hotel.distanceToStadiumMi)}</td>
+            <td class="strong">${isSoldOut ? "—" : toMiles(hotel.distanceToDowntownMi)}</td>
+            <td class="strong">${isSoldOut ? "—" : rating}</td>
+            <td>${isSoldOut ? "Sold out" : (hotel.notes || "-")}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function resetTableFiltersToDefault() {
+      state.tableStatus = "";
+      state.tableMaxWeekend = null;
+      state.tableMaxStadium = null;
+      state.tableMaxDowntown = null;
+      state.tableMinRating = null;
+
+      els.tableStatusInput.value = "";
+      els.tablePriceInput.value = "";
+      els.tableStadiumInput.value = "";
+      els.tableDowntownInput.value = "";
+      els.tableRatingInput.value = "";
+    }
+
+    function render() {
+      const filteredRows = filterRows();
+      renderEvaluation(filteredRows);
+      renderFriendVotes();
+      renderMap(filteredRows);
+      renderChart(filteredRows);
+      renderTable(filteredRows);
+    }
+
+    function bind() {
+      els.friendButtons.addEventListener("click", (event) => {
+        const target = event.target.closest("button[data-name]");
+        if (!target) {
+          return;
+        }
+        activeFriend = target.dataset.name;
+        renderFriendVotes();
+      });
+
+      els.attendingInput.addEventListener("change", (event) => {
+        friendVotes[activeFriend].attending = event.target.value;
+        friendVotes[activeFriend].dirty = true;
+        renderFriendVotes();
+      });
+
+      els.choiceInput.addEventListener("change", (event) => {
+        friendVotes[activeFriend].choice = event.target.value;
+        friendVotes[activeFriend].dirty = true;
+        renderFriendVotes();
+      });
+
+      els.submitVoteBtn.addEventListener("click", () => {
+        submitActiveFriendVote();
+      });
+
+      els.tableStatusInput.addEventListener("change", (event) => {
+        state.tableStatus = event.target.value;
+        render();
+      });
+
+      els.tablePriceInput.addEventListener("input", (event) => {
+        state.tableMaxWeekend = parseNullableNumber(event.target.value.trim());
+        render();
+      });
+
+      els.tableStadiumInput.addEventListener("input", (event) => {
+        state.tableMaxStadium = parseNullableNumber(event.target.value.trim());
+        render();
+      });
+
+      els.tableDowntownInput.addEventListener("input", (event) => {
+        state.tableMaxDowntown = parseNullableNumber(event.target.value.trim());
+        render();
+      });
+
+      els.tableRatingInput.addEventListener("input", (event) => {
+        state.tableMinRating = parseNullableNumber(event.target.value.trim());
+        render();
+      });
+
+      els.resetTableFiltersBtn.addEventListener("click", () => {
+        resetTableFiltersToDefault();
+        render();
+      });
+
+      window.addEventListener("resize", () => {
+        if (map) {
+          map.invalidateSize();
+        }
+      });
+    }
+
+    function formatUpdatedTimestamp() {
+      const now = new Date();
+      return `Updated ${now.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      })}`;
+    }
+
+    function setup() {
+      els.updatedAt.textContent = formatUpdatedTimestamp();
+      initMap();
+      loadVotesFromStorage();
+      bind();
+      resetTableFiltersToDefault();
+      render();
+      loadVotesFromShared();
+      window.setInterval(() => {
+        loadVotesFromShared({ preserveDirtyActive: true });
+      }, SHARED_VOTE_REFRESH_MS);
+    }
+
+    setup();
+  </script>
+</body>
+</html>
